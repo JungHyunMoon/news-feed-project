@@ -21,75 +21,75 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class ApiUserService {
 
-  private final UserService userService;
+    private final UserService userService;
 
-  private final JwtManager jwtManager;
+    private final JwtManager jwtManager;
 
-  private final PasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder;
 
-  public UserResponseDTO signupUser(UserSignupRequestDTO userSignupRequestDTO) {
+    public UserResponseDTO signupUser(UserSignupRequestDTO userSignupRequestDTO) {
 
-    validateDuplicateUser(userSignupRequestDTO);
-    User savedUser = userService.saveUser(userSignupRequestDTO.toEntity(passwordEncoder));
+        isDuplicateUser(userSignupRequestDTO);
+        User savedUser = userService.saveUser(userSignupRequestDTO.toEntity(passwordEncoder));
 
-    return UserResponseDTO.from(savedUser);
-  }
-
-  private void validateDuplicateUser(UserSignupRequestDTO userSignupRequestDTO) {
-
-    userService.findByUserName(userSignupRequestDTO.userName()).ifPresent(user -> {
-      throw new AlreadyUserExistException(ErrorCode.ALREADY_EXIST_USER_NAME_EXCEPTION);
-    });
-
-    userService.findByUserEmail(userSignupRequestDTO.userEmail()).ifPresent(user -> {
-      throw new AlreadyUserExistException(ErrorCode.ALREADY_EXIST_EMAIL_EXCEPTION);
-    });
-  }
-
-  @Transactional
-  public UserResponseDTO updateUser(UserModifyRequestDTO userModifyRequestDTO, Long userId) {
-    User findUser = userService.findByUserId(userId).orElseThrow(UserNotFoundException::new);
-    userService.updateUser(findUser, userModifyRequestDTO.toEntity());
-
-    return UserResponseDTO.from(findUser);
-  }
-
-  public String reissueAccessToken(String refreshToken) {
-
-    String userName = jwtManager.getUserNameFromToken(refreshToken);
-
-    validateRefreshToken(refreshToken, userName);
-
-    return jwtManager.createAccessToken(userName);
-  }
-
-  private void validateRefreshToken(String refreshToken, String userName) {
-
-    if (!isRefreshToken(refreshToken)) {
-      throw new NotRefreshTokenException();
+        return UserResponseDTO.from(savedUser);
     }
 
-    if (!isRightRefreshToken(refreshToken, userName)) {
-      throw new NotMisMatchedRefreshTokenException();
+    private void isDuplicateUser(UserSignupRequestDTO userSignupRequestDTO) {
+
+        userService.findByUserName(userSignupRequestDTO.userName()).ifPresent(user -> {
+            throw new AlreadyUserExistException(ErrorCode.ALREADY_EXIST_USER_NAME_EXCEPTION);
+        });
+
+        userService.findByUserEmail(userSignupRequestDTO.userEmail()).ifPresent(user -> {
+            throw new AlreadyUserExistException(ErrorCode.ALREADY_EXIST_EMAIL_EXCEPTION);
+        });
     }
-  }
 
-  private boolean isRefreshToken(String refreshToken) {
+    @Transactional
+    public UserResponseDTO updateUser(UserModifyRequestDTO userModifyRequestDTO, Long userId) {
+        User findUser = userService.findByUserId(userId).orElseThrow(UserNotFoundException::new);
+        userService.updateUser(findUser, userModifyRequestDTO.toEntity());
 
-    String tokenType = jwtManager.getTokenTypeFromToken(refreshToken);
+        return UserResponseDTO.from(findUser);
+    }
 
-    return TokenType.REFRESH.toString().equals(tokenType);
-  }
+    public String reissueAccessToken(String refreshToken) {
 
-  private boolean isRightRefreshToken(String refreshToken, String userName) {
+        String userName = jwtManager.getUserNameFromToken(refreshToken);
 
-    User findUser = userService.findByUserName(userName)
-        .orElseThrow(UserNotFoundException::new);
+        validateRefreshToken(refreshToken, userName);
 
-    return findUser.getRefreshToken().equals(refreshToken);
-  }
+        return jwtManager.createAccessToken(userName);
+    }
 
-  public void logoutUser(Long userId) {
-    userService.logoutUser(userId);
-  }
+    private void validateRefreshToken(String refreshToken, String userName) {
+
+        if (!isRefreshToken(refreshToken)) {
+            throw new NotRefreshTokenException();
+        }
+
+        if (!isRightRefreshToken(refreshToken, userName)) {
+            throw new NotMisMatchedRefreshTokenException();
+        }
+    }
+
+    private boolean isRefreshToken(String refreshToken) {
+
+        String tokenType = jwtManager.getTokenTypeFromToken(refreshToken);
+
+        return TokenType.REFRESH.toString().equals(tokenType);
+    }
+
+    private boolean isRightRefreshToken(String refreshToken, String userName) {
+
+        User findUser = userService.findByUserName(userName)
+            .orElseThrow(UserNotFoundException::new);
+
+        return findUser.getRefreshToken().equals(refreshToken);
+    }
+
+    public void logoutUser(Long userId) {
+        userService.logoutUser(userId);
+    }
 }
