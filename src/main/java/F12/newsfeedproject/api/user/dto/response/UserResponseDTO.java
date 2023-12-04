@@ -10,9 +10,12 @@ public record UserResponseDTO(
     String userIntroduce
 ) {
 
-  public static UserResponseDTO from(User user) {
-    return new UserResponseDTO(user.getUserId(), user.getUserName(), user.getUserEmail(),
-        user.getUserImageUrl(),
-        user.getUserIntroduce());
-  }
+    public static UserResponseDTO from(User user) {
+        return new UserResponseDTO(
+            user.getUserId(),
+            user.getUserName(),
+            user.getUserEmail(),
+            user.getUserImageUrl(),
+            user.getUserIntroduce());
+    }
 }
